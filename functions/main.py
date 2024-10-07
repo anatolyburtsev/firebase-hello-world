@@ -7,34 +7,24 @@ from urllib.parse import urlparse
 import re
 import logging
 
+ALLOWLIST = ["FILL_ME"]
 
 initialize_app()
 
-class ListingIdExtractionStatus:
+class QueryProcessingStatus:
     OK = "OK"
     FAILED = "FAILED"
 
 @https_fn.on_call()
-def extract_listing_id_function(req: https_fn.CallableRequest) -> Any:
-    """Extract the listing ID from an Airbnb URL."""
+def answer_legal_question(req: https_fn.CallableRequest) -> Any:
+    query = req.data['query']
 
-    url = req.data['url']
+    if not req.auth or not req.auth.token or 'email' not in req.auth.token:
+        return {"status": QueryProcessingStatus.FAILED, "response": "Unauthorized access, email not found."}
 
-    if not url:
-        return {"status": ListingIdExtractionStatus.FAILED, "listing_id": None}
+    user_email = req.auth.token['email']
 
-    try:
-        parsed_url = urlparse(url)
-        path = parsed_url.path
+    if not user_email in ALLOWLIST:
+        return {"status": QueryProcessingStatus.FAILED, "response": "Unauthorized access, user not allowlisted."}
 
-        match = re.search(r'/rooms/(\d+)', path)
-        if match:
-            listing_id = match.group(1)
-            logging.info(f"Extracted ID: {listing_id}")
-            return {"status": ListingIdExtractionStatus.OK, "listing_id": str(listing_id)}
-        else:
-            return {"status": ListingIdExtractionStatus.FAILED, "listing_id": None}
-
-    except Exception as e:
-        logging.error(f"Error extracting listing ID: {str(e)}")
-        return {"status": ListingIdExtractionStatus.FAILED, "listing_id": None}
+    return {"status": QueryProcessingStatus.OK, "response": f"{query=} {user_email=}"}

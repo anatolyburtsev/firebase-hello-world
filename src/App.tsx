@@ -4,7 +4,7 @@ import { auth } from './firebase';
 import SignIn from './components/SignIn';
 import UserInfo from './components/UserInfo';
 import { Container, Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import ListingPage from "./components/ListingPage";
+import QAPage from "./components/QAPage";
 
 const theme = createTheme();
 
@@ -19,7 +19,7 @@ const App: React.FC = () => {
           {user ? (
             <>
               <UserInfo user={user} />
-              <ListingPage />
+              <QAPage />
             </>
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>

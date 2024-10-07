@@ -5,11 +5,11 @@ import {getFunctions, httpsCallable} from 'firebase/functions';
 
 interface ExtractListingResponse {
   status: 'OK' | 'FAILED';
-  listing_id: string | null;
+  response: string | null;
 }
 
-const ExtractListingPage = () => {
-  const [url, setUrl] = useState('');
+const QAPage = () => {
+  const [query, setQuery] = useState('');
   const [result, setResult] = useState<string|null>(null);
   const [error, setError] = useState<string|null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,16 +20,16 @@ const ExtractListingPage = () => {
     setResult(null);
 
     const functions = getFunctions();
-    const extractListingId = httpsCallable<{ url: string }, ExtractListingResponse>(functions, 'extract_listing_id_function');
+    const answerLegalQuestionFunc = httpsCallable<{ query: string }, ExtractListingResponse>(functions, 'answer_legal_question');
 
     try {
-      const response = await extractListingId({ url });
+      const response = await answerLegalQuestionFunc({ query });
       const data = response.data as ExtractListingResponse;  // Type assertion
 
       if (data.status === 'OK') {
-        setResult(data.listing_id);
+        setResult(data.response);
       } else {
-        setError('Failed to extract listing ID.');
+        setError(`Failed to answer query. Error: ${data.response}`);
       }
     } catch (err) {
       setError('Error calling function. Please check the URL or try again later.');
@@ -43,9 +43,9 @@ const ExtractListingPage = () => {
       <Paper elevation={3} sx={{p: 3, width: '100%', maxWidth: 500}}>
         <TextField
           fullWidth
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter Airbnb URL"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter your question"
           variant="outlined"
           margin="normal"
         />
@@ -54,16 +54,16 @@ const ExtractListingPage = () => {
           variant="contained"
           color="primary"
           fullWidth
-          disabled={isLoading || !url}
+          disabled={isLoading || !query}
         >
           {isLoading ? 'Extracting...' : 'Submit'}
         </Button>
 
         {error && <Typography color="error" sx={{mt: 2}}>{error}</Typography>}
-        {result && <Typography color="green" sx={{mt: 2}}>Listing ID: {result}</Typography>}
+        {result && <Typography color="green" sx={{mt: 2}}>Response: {result}</Typography>}
       </Paper>
     </Box>
   );
 };
 
-export default ExtractListingPage;
+export default QAPage;
