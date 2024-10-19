@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Box, Button, TextField, Typography, Paper} from '@mui/material';
-import {getFunctions, httpsCallable} from 'firebase/functions';
+import {getFunctions, httpsCallable, connectFunctionsEmulator} from 'firebase/functions';
+import {isEmulator} from "./SignIn";
 
 
 interface ExtractListingResponse {
@@ -19,8 +20,12 @@ const QAPage = () => {
     setError(null);
     setResult(null);
 
-    const functions = getFunctions();
+    // const functions = getFunctions();
+    const functions = getFunctions(undefined, 'us-central1');
     const answerLegalQuestionFunc = httpsCallable<{ query: string }, ExtractListingResponse>(functions, 'answer_legal_question');
+    if (isEmulator) {
+      connectFunctionsEmulator(functions, '127.0.0.1', 5001);  // Use the appropriate port number for your emulator
+    }
 
     try {
       const response = await answerLegalQuestionFunc({ query });
