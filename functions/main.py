@@ -1,11 +1,30 @@
 from typing import Any
 
 from firebase_admin import initialize_app
+import os
 from firebase_functions import https_fn, options
+import logging
+from google.cloud import logging as gcp_logging
+
 
 ALLOWLIST = ["testuser@example.com"]
 
 initialize_app()
+
+logger = logging.getLogger()
+
+def configure_logging():
+    # Check if running in GCP or Emulator
+    if os.getenv('FUNCTIONS_EMULATOR', None):
+        # Running in Emulator, log locally
+        logging.basicConfig(level=logging.INFO)
+    else:
+        # Running in GCP, set up Google Cloud logging
+        client = gcp_logging.Client()
+        client.setup_logging()
+
+# Call the logging configuration function at the start
+configure_logging()
 
 class QueryProcessingStatus:
     OK = "OK"
@@ -17,6 +36,8 @@ class QueryProcessingStatus:
         cors_methods=["get", "post", "options"]))
 def answer_legal_question(req: https_fn.CallableRequest) -> Any:
     query = req.data['query']
+
+    logger.info(f"{query=}")
 
     if not req.auth or not req.auth.token or 'email' not in req.auth.token:
         return {"status": QueryProcessingStatus.FAILED, "response": "Unauthorized access, email not found."}
